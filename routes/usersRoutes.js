@@ -13,6 +13,7 @@ router.post("/register", async (req, res) => {
     name,
     email,
     password,
+    location,
     professional_status,
     experience_years,
     job_title,
@@ -23,7 +24,7 @@ router.post("/register", async (req, res) => {
     !password ||
     !professional_status ||
     !experience_years ||
-    job_title
+    !job_title
   ) {
     return res.status(401).json({ error: "please fill the required fields" });
   }
@@ -34,6 +35,7 @@ router.post("/register", async (req, res) => {
     password: hashedPassword,
     professional_status,
     experience_years,
+    location,
     job_title,
   };
 
@@ -45,4 +47,53 @@ router.post("/register", async (req, res) => {
     return res.status(400).json({ error: "failed registeration" });
   }
 });
+
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(401).json({ error: "please fill in required fields" });
+  }
+  try {
+    const user = await knex("users").where({ email: email }).first();
+    if (!user) {
+      return res.status(400).json({ error: "user not found" });
+    }
+    const passwordCorrect = bcrypt.compareSync(password, user.password);
+    if (!passwordCorrect) {
+      return res.status(400).json({ error: "incorrect password" });
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+    res.status(200).json({ token });
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ error: "Failed login" });
+  }
+});
+
+router.get("/profile", async (req, res) => {
+  if (!req.headers.authorization) {
+    return res.status(401).send({ error: "Please login" });
+  }
+  const authToken = req.headers.authorization.split(" ")[1];
+  if (!authToken || !process.env.JWT_SECRET) {
+    return res.status(401).json({ error: "Auth token or secret is missing" });
+  }
+  try {
+    const verified = jwt.verify(authToken, process.env.JWT_SECRET);
+    if (verified) {
+      const { id } = verified;
+      const user = await knex("users").where({ id }).first();
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+    }
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid auth token" });
+  }
+});
+
 module.exports = router;
