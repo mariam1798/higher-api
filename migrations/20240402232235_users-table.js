@@ -3,6 +3,7 @@ exports.up = function (knex) {
     table.increments("id").primary();
     table.string("name").notNullable();
     table.string("email").notNullable();
+    table.string("password").notNullable();
     table.string("location").notNullable();
     table.string("professional_status").notNullable();
     table.integer("experience_years").notNullable();
@@ -15,5 +16,5 @@ exports.up = function (knex) {
 };
 
 exports.down = function (knex) {
-  return knex.schema.dropTable("inventories");
+  return knex.schema.dropTable("users");
 };
