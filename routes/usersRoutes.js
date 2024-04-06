@@ -84,13 +84,16 @@ router.get("/profile", async (req, res) => {
   }
   try {
     const verified = jwt.verify(authToken, process.env.JWT_SECRET);
-    if (verified) {
-      const { id } = verified;
-      const user = await knex("users").where({ id }).first();
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
+    const { id } = verified; // Destructure for clarity
+
+    // Fetch user
+    const user = await knex("users").where({ id }).first();
+
+    if (!user) {
+      // Check if user exists
+      return res.status(404).json({ error: "User not found" });
     }
+    res.json(user);
   } catch (error) {
     return res.status(401).json({ error: "Invalid auth token" });
   }

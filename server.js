@@ -7,7 +7,7 @@ const userRoutes = require("./routes/usersRoutes");
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 5000;
 
 //Set up CORS access and JSON convention
 app.use(cors());
