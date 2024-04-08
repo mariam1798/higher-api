@@ -121,18 +121,7 @@ const getVideos = async (req, res) => {
 const getVideosDetails = async (req, res) => {
   const videoId = req.params.videoId;
   try {
-    const videos = await knex("videos")
-      .select(
-        "videos.id",
-        "videos.title",
-        "users.name",
-        "videos.description",
-        "videos.url"
-      )
-      .join("users", "users.id", "videos.user_id")
-      .where("videos.id", videoId)
-      .first()
-      .toString();
+    const videos = await knex("videos").where("videos.id", videoId).first();
     if (!videos) {
       return res
         .status(404)
