@@ -1,5 +1,7 @@
 const bcrypt = require("bcrypt");
 require("dotenv").config();
+const fs = require("fs").promises;
+const path = require("path");
 
 const environment = process.env.NODE_ENV || "development";
 const configuration = require("../knexfile")[environment];
@@ -118,16 +120,16 @@ const getVideos = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch videos" });
   }
 };
-const getVideosDetails = async (req, res) => {
-  const videoId = req.params.videoId;
+const getUserVideos = async (req, res) => {
+  const userId = req.params.userId;
   try {
-    const videos = await knex("videos").where("videos.id", videoId).first();
-    if (!videos) {
+    const users = await knex("videos").where("videos.user_id", userId);
+    if (!users) {
       return res
         .status(404)
-        .json({ message: `Could not find item with ID: ${videoId}` });
+        .json({ message: `Could not find item with ID: ${userId}` });
     }
-    res.json(videos);
+    res.json(users);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch videos" });
@@ -185,12 +187,37 @@ const addVideo = async (req, res) => {
   }
 };
 
+const getJobs = async (req, res) => {
+  const title = req.params.title.replace(/-/g, "_").toLowerCase();
+  const filePath = path.join(__dirname, "..", "data", `${title}.json`);
+  const { location } = req.query;
+  try {
+    const data = await fs.readFile(filePath, "utf8");
+    const jobs = JSON.parse(data);
+
+    const filteredJobs = jobs.filter((job) =>
+      job.countries.some(
+        (country) => country.name.toLowerCase() === location.toLowerCase()
+      )
+    );
+
+    res.json(filteredJobs);
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      res.status(404).send("Job data not found");
+    } else {
+      res.status(500).send("An error occurred while processing your request");
+    }
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getUser,
-  getVideosDetails,
+  getUserVideos,
   addVideo,
   uploadVideo,
   getVideos,
+  getJobs,
 };
