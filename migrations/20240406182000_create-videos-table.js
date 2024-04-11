@@ -5,7 +5,7 @@ exports.up = function (knex) {
     table.string("channel");
     table.text("description");
     table.string("views");
-    table.string("likes");
+    table.integer("likes").defaultTo(0);
     table.string("url");
     table.bigInteger("timestamp");
     table

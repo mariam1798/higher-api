@@ -169,8 +169,6 @@ const addVideo = async (req, res) => {
   const newVideo = {
     title,
     description,
-    views: 0,
-    likes: 0,
     url: req.file.path,
     timestamp: Date.now(),
     user_id: userId,
@@ -197,7 +195,7 @@ const getJobs = async (req, res) => {
 
     const filteredJobs = jobs.filter((job) =>
       job.countries.some(
-        (country) => country.name.toLowerCase() === location.toLowerCase()
+        (country) => country.code.toLowerCase() === location.toLowerCase()
       )
     );
 
@@ -210,6 +208,23 @@ const getJobs = async (req, res) => {
     }
   }
 };
+const editVideo = async (req, res) => {
+  const videoId = req.params.videoId;
+  try {
+    const video = await knex("videos").where({ id: videoId }).first();
+
+    video.likes++;
+
+    const updatedVideo = await knex("videos")
+      .where({ id: videoId })
+      .update(video);
+
+    res.json(updatedVideo);
+  } catch (error) {
+    console.error(error);
+    return res.status(401).json({ error: `invalid video with ${videoId}` });
+  }
+};
 
 module.exports = {
   registerUser,
@@ -220,4 +235,5 @@ module.exports = {
   uploadVideo,
   getVideos,
   getJobs,
+  editVideo,
 };

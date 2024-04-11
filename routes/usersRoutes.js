@@ -8,6 +8,7 @@ const {
   uploadVideo,
   getVideos,
   getJobs,
+  editVideo,
 } = require("../controllers/usersControllers");
 
 router.post("/register", registerUser);
@@ -19,5 +20,6 @@ router.post("/videos", uploadVideo.single("file"), addVideo);
 router.get("/videos", getVideos);
 router.get("/:userId/videos", getUserVideos);
 router.get("/job/:title", getJobs);
+router.patch("/videos/:videoId", editVideo);
 
 module.exports = router;
