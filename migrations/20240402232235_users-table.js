@@ -6,6 +6,7 @@ exports.up = function (knex) {
     table.string("password").notNullable();
     table.string("location").notNullable();
     table.string("professional_status").notNullable();
+    table.string("avatar").notNullable();
     table.integer("experience_years").notNullable();
     table.string("job_title").notNullable();
     table.timestamp("created_at").defaultTo(knex.fn.now());

@@ -1,7 +1,5 @@
 const bcrypt = require("bcrypt");
 require("dotenv").config();
-const fs = require("fs").promises;
-const path = require("path");
 
 const environment = process.env.NODE_ENV || "development";
 const configuration = require("../knexfile")[environment];
@@ -29,6 +27,7 @@ const registerUser = async (req, res) => {
   ) {
     return res.status(401).json({ error: "please fill the required fields" });
   }
+
   const hashedPassword = bcrypt.hashSync(password, 6);
   const newUser = {
     name,
@@ -38,6 +37,7 @@ const registerUser = async (req, res) => {
     experience_years,
     location,
     job_title,
+    avatar: req.file.path,
   };
 
   try {
@@ -105,21 +105,10 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   },
 });
-const uploadVideo = multer({
+const upload = multer({
   storage: storage,
 });
-const getVideos = async (req, res) => {
-  try {
-    const videos = await knex("videos");
-    if (!videos) {
-      return res.status(404).json({ message: `Could not find videos` });
-    }
-    res.json(videos);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch videos" });
-  }
-};
+
 const getUserVideos = async (req, res) => {
   const userId = req.params.userId;
   try {
@@ -136,104 +125,10 @@ const getUserVideos = async (req, res) => {
   }
 };
 
-const addVideo = async (req, res) => {
-  let userId;
-  let user;
-
-  try {
-    const authToken = req.headers.authorization?.split(" ")[1];
-    if (!authToken) {
-      return res.status(401).json({ error: "No token provided" });
-    }
-
-    const verified = jwt.verify(authToken, process.env.JWT_SECRET);
-    userId = verified.id;
-    user = await knex("users").where({ id: userId }).first();
-    console.log(user);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-  } catch (error) {
-    console.log(error);
-    return res.status(403).json({ error: "Invalid auth token" });
-  }
-
-  const { title, description } = req.body;
-  let errors = {};
-  if (req.fileError) {
-    errors["video"] = req.fileError;
-  }
-  if (!title || !description) {
-    return res.status(401).json({ error: "please fill video details" });
-  }
-  const newVideo = {
-    title,
-    description,
-    url: req.file.path,
-    timestamp: Date.now(),
-    user_id: userId,
-    channel: user.name,
-  };
-  try {
-    await knex("videos").insert(newVideo);
-    res.json({ message: "video uploaded successfully" });
-  } catch (error) {
-    console.log(error);
-    return res
-      .status(401)
-      .json({ error: "Invalid auth token or database error" });
-  }
-};
-
-const getJobs = async (req, res) => {
-  const title = req.params.title.replace(/-/g, "_").toLowerCase();
-  const filePath = path.join(__dirname, "..", "data", `${title}.json`);
-  const { location } = req.query;
-  try {
-    const data = await fs.readFile(filePath, "utf8");
-    const jobs = JSON.parse(data);
-
-    const filteredJobs = jobs.filter((job) =>
-      job.countries.some(
-        (country) => country.code.toLowerCase() === location.toLowerCase()
-      )
-    );
-
-    res.json(filteredJobs);
-  } catch (err) {
-    if (err.code === "ENOENT") {
-      res.status(404).send("Job data not found");
-    } else {
-      res.status(500).send("An error occurred while processing your request");
-    }
-  }
-};
-const editVideo = async (req, res) => {
-  const videoId = req.params.videoId;
-  try {
-    const video = await knex("videos").where({ id: videoId }).first();
-
-    video.likes++;
-
-    const updatedVideo = await knex("videos")
-      .where({ id: videoId })
-      .update(video);
-
-    res.json(updatedVideo);
-  } catch (error) {
-    console.error(error);
-    return res.status(401).json({ error: `invalid video with ${videoId}` });
-  }
-};
-
 module.exports = {
   registerUser,
   loginUser,
   getUser,
   getUserVideos,
-  addVideo,
-  uploadVideo,
-  getVideos,
-  getJobs,
-  editVideo,
+  upload,
 };
