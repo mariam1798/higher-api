@@ -70,6 +70,7 @@ const addVideo = async (req, res) => {
     timestamp: Date.now(),
     user_id: userId,
     channel: user.name,
+    avatar: user.avatar,
   };
   try {
     await knex("videos").insert(newVideo);
@@ -89,9 +90,9 @@ const editVideo = async (req, res) => {
 
     video.likes++;
 
-    const updatedVideo = await knex("videos")
-      .where({ id: videoId })
-      .update(video);
+    await knex("videos").where({ id: videoId }).update(video);
+
+    const updatedVideo = await knex("videos").where({ id: videoId }).first();
 
     res.json(updatedVideo);
   } catch (error) {

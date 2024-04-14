@@ -5,6 +5,19 @@ const environment = process.env.NODE_ENV || "development";
 const configuration = require("../knexfile")[environment];
 const knex = require("knex")(configuration);
 
+const multer = require("multer");
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({
+  storage: storage,
+});
+
 const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res) => {
@@ -96,18 +109,6 @@ const getUser = async (req, res) => {
     return res.status(401).json({ error: "Invalid auth token" });
   }
 };
-const multer = require("multer");
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
-const upload = multer({
-  storage: storage,
-});
 
 const getUserVideos = async (req, res) => {
   const userId = req.params.userId;
@@ -124,11 +125,39 @@ const getUserVideos = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch videos" });
   }
 };
-
+const getUserDetails = async (req, res) => {
+  const userId = req.params.userId;
+  try {
+    const users = await knex("users").where("users.id", userId).first();
+    if (!users) {
+      return res
+        .status(404)
+        .json({ message: `Could not find item with ID: ${userId}` });
+    }
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
+};
+const getUsers = async (req, res) => {
+  try {
+    const users = await knex("users");
+    if (!users) {
+      return res.status(404).json({ message: `Could not find users` });
+    }
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+};
 module.exports = {
   registerUser,
   loginUser,
   getUser,
   getUserVideos,
   upload,
+  getUserDetails,
+  getUsers,
 };
