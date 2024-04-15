@@ -46,7 +46,6 @@ const addVideo = async (req, res) => {
     const verified = jwt.verify(authToken, process.env.JWT_SECRET);
     userId = verified.id;
     user = await knex("users").where({ id: userId }).first();
-    console.log(user);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -63,6 +62,7 @@ const addVideo = async (req, res) => {
   if (!title || !description) {
     return res.status(401).json({ error: "please fill video details" });
   }
+
   const newVideo = {
     title,
     description,

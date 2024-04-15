@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const userRoutes = require("./routes/usersRoutes");
 const videosRoutes = require("./routes/videosRoutes");
+const commentsRoutes = require("./routes/commentsRoutes");
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/users", userRoutes);
 app.use("/videos", videosRoutes);
+app.use("/comments", commentsRoutes);
 const path = require("path");
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
