@@ -1,8 +1,7 @@
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 
-const environment = process.env.NODE_ENV || "development";
-const configuration = require("../knexfile")[environment];
+const configuration = require("../knexfile");
 const knex = require("knex")(configuration);
 
 const multer = require("multer");
@@ -96,9 +95,8 @@ const getUser = async (req, res) => {
   }
   try {
     const verified = jwt.verify(authToken, process.env.JWT_SECRET);
-    const userId = verified.id; // Destructure for clarity
+    const userId = verified.id;
 
-    // Fetch user
     const user = await knex("users").where({ id: userId }).first();
 
     if (!user) {
