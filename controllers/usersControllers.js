@@ -22,10 +22,7 @@ const upload = multer({
     let ext = path.extname(file.originalname).toLowerCase();
     let filename = path.basename(file.originalname, ext).toLowerCase();
 
-    if (
-      (ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") ||
-      !filename.startsWith("photo")
-    ) {
+    if (ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") {
       cb(
         new Error(
           "File type is not supported or filename does not start with 'Photo'"
