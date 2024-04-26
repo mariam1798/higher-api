@@ -6,6 +6,7 @@ exports.up = function (knex) {
     table.text("description");
     table.integer("likes").defaultTo(0);
     table.string("url");
+    table.string("cloudinary_id");
     table.string("avatar");
     table.bigInteger("timestamp");
     table

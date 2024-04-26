@@ -1,10 +1,13 @@
 const bcrypt = require("bcrypt");
 require("dotenv").config();
+const cloudinary = require("../utils/cloudinary");
+const path = require("path");
 
 const configuration = require("../knexfile");
 const knex = require("knex")(configuration);
 
 const multer = require("multer");
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -15,6 +18,24 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage: storage,
+  fileFilter: (req, file, cb) => {
+    let ext = path.extname(file.originalname).toLowerCase();
+    let filename = path.basename(file.originalname, ext).toLowerCase();
+
+    if (
+      (ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") ||
+      !filename.startsWith("photo")
+    ) {
+      cb(
+        new Error(
+          "File type is not supported or filename does not start with 'Photo'"
+        ),
+        false
+      );
+    } else {
+      cb(null, true);
+    }
+  },
 });
 
 const jwt = require("jsonwebtoken");
@@ -41,6 +62,16 @@ const registerUser = async (req, res) => {
   }
 
   const hashedPassword = bcrypt.hashSync(password, 6);
+  let avatarUrl = "";
+  try {
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "image",
+    });
+    avatarUrl = result.secure_url;
+  } catch (error) {
+    console.error("Failed to upload avatar to Cloudinary:", error);
+    return res.status(500).json({ error: "Failed to upload avatar" });
+  }
   const newUser = {
     name,
     email,
@@ -49,7 +80,7 @@ const registerUser = async (req, res) => {
     experience_years,
     location,
     job_title,
-    avatar: req.file.path,
+    avatar: avatarUrl,
   };
 
   try {

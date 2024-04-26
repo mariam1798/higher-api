@@ -1,10 +1,19 @@
 const bcrypt = require("bcrypt");
 require("dotenv").config();
+const cloudinary = require("../utils/cloudinary");
 
 const configuration = require("../knexfile");
 const knex = require("knex")(configuration);
 
 const jwt = require("jsonwebtoken");
+
+const fileFilter = (req, file, cb) => {
+  if (file.originalname.match(/\.(mov)$/)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type, only .mov files are allowed!"), false);
+  }
+};
 
 const multer = require("multer");
 const storage = multer.diskStorage({
@@ -18,6 +27,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
+  fileFilter: fileFilter,
 });
 
 const getVideos = async (req, res) => {
@@ -33,6 +43,10 @@ const getVideos = async (req, res) => {
   }
 };
 const addVideo = async (req, res) => {
+  if (!req.body.title || !req.body.description) {
+    return res.status(400).json({ error: "Please fill in video details" });
+  }
+
   let userId;
   let user;
 
@@ -53,35 +67,41 @@ const addVideo = async (req, res) => {
     return res.status(403).json({ error: "Invalid auth token" });
   }
 
-  const { title, description } = req.body;
-  let errors = {};
-  if (req.fileError) {
-    errors["video"] = req.fileError;
+  if (!req.file) {
+    return res.status(400).json({ error: "No video file uploaded" });
   }
-  if (!title || !description) {
-    return res.status(401).json({ error: "please fill video details" });
+
+  let result;
+  try {
+    result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: "video",
+    });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ error: "Error uploading video to Cloudinary" });
   }
 
   const newVideo = {
-    title,
-    description,
-    url: req.file.path,
+    title: req.body.title,
+    description: req.body.description,
+    url: result.secure_url,
+    cloudinary_id: result.public_id,
     timestamp: Date.now(),
     user_id: userId,
     channel: user.name,
     avatar: user.avatar,
   };
+
   try {
     await knex("videos").insert(newVideo);
-    res.json({ message: "video uploaded successfully" });
+    res.json({ message: "Video uploaded successfully" });
   } catch (error) {
     console.log(error);
-    return res
-      .status(401)
-      .json({ error: "Invalid auth token or database error" });
+    return res.status(500).json({ error: "Database error" });
   }
 };
-
 const editVideo = async (req, res) => {
   const videoId = req.params.videoId;
   try {
@@ -99,10 +119,40 @@ const editVideo = async (req, res) => {
     return res.status(401).json({ error: `invalid video with ${videoId}` });
   }
 };
+const deleteVideos = async (req, res) => {
+  const videoId = req.params.videoId;
+  try {
+    const cloudinary_id = await knex("videos")
+      .select("cloudinary_id")
+      .where("id", videoId)
+      .first();
+
+    if (!cloudinary_id) {
+      return res
+        .status(404)
+        .json({ message: `Video with ID ${videoId} not found` });
+    }
+
+    await cloudinary.uploader.destroy(cloudinary_id);
+
+    const rowsDeleted = await knex("videos").where("id", videoId).delete();
+    if (rowsDeleted === 0) {
+      return res
+        .status(404)
+        .json({ message: `video with ID ${videoId} not found` });
+    }
+    res.sendStatus(204);
+  } catch (error) {
+    res.status(500).json({
+      message: `Unable to delete video ${error}`,
+    });
+  }
+};
 
 module.exports = {
   addVideo,
   getVideos,
   editVideo,
+  deleteVideos,
   upload,
 };
