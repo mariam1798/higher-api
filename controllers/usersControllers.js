@@ -60,14 +60,16 @@ const registerUser = async (req, res) => {
 
   const hashedPassword = bcrypt.hashSync(password, 6);
   let avatarUrl = "";
-  try {
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: "image",
-    });
-    avatarUrl = result.secure_url;
-  } catch (error) {
-    console.error("Failed to upload avatar to Cloudinary:", error);
-    return res.status(500).json({ error: "Failed to upload avatar" });
+  if (req.file) {
+    try {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        resource_type: "image",
+      });
+      avatarUrl = result.secure_url;
+    } catch (error) {
+      console.error("Failed to upload avatar to Cloudinary:", error);
+      return res.status(500).json({ error: "Failed to upload avatar" });
+    }
   }
   const newUser = {
     name,

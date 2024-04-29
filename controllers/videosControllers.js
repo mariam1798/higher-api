@@ -148,9 +148,20 @@ const deleteVideos = async (req, res) => {
     });
   }
 };
+const getVideo = async (req, res) => {
+  const videoId = req.params.videoId;
+  try {
+    const video = await knex("videos").where({ id: videoId }).first();
+    res.json(video);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: `Failed to fetch video with id ${videoId}` });
+  }
+};
 
 module.exports = {
   addVideo,
+  getVideo,
   getVideos,
   editVideo,
   deleteVideos,
