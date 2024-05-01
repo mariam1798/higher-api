@@ -8,10 +8,13 @@ const knex = require("knex")(configuration);
 const jwt = require("jsonwebtoken");
 
 const fileFilter = (req, file, cb) => {
-  if (file.originalname.match(/\.(mov)$/)) {
+  if (file.originalname.match(/\.(mov|mp4)$/)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type, only .mov files are allowed!"), false);
+    cb(
+      new Error("Invalid file type, only .mov and .mp4 files are allowed!"),
+      false
+    );
   }
 };
 
