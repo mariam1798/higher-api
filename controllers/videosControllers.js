@@ -73,7 +73,11 @@ const addVideo = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No video file uploaded" });
   }
-
+  if (!req.file.originalname.match(/\.(mov|mp4)$/)) {
+    return res.status(400).json({
+      error: "Invalid file type, only .mov and .mp4 files are allowed",
+    });
+  }
   let result;
   try {
     result = await cloudinary.uploader.upload(req.file.path, {
